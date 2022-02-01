@@ -9,7 +9,6 @@ fn min_multiplications_dyn(start: u32, end: u32, memo: &mut HashMap<(u32, u32), 
     if let Some(min) = memo.get(&(start, end)) {
         return min.clone();
     }
-    println!("{start} {end}");
     let min = (start..end)
         .map(|k| {
             let Matrix {
