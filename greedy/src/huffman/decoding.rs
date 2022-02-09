@@ -2,6 +2,7 @@ use bit_vec::{BitVec, Iter};
 
 use super::encoding::EncodeTree;
 
+#[derive(Debug)]
 pub enum Decoder<T> {
     Parent(Box<Decoder<T>>, Box<Decoder<T>>),
     Leaf(T),
@@ -22,9 +23,9 @@ impl<T: Clone> Decoder<T> {
         match self {
             Decoder::Parent(left, right) => {
                 if iter.next()? {
-                    left.decode_item(iter)
-                } else {
                     right.decode_item(iter)
+                } else {
+                    left.decode_item(iter)
                 }
             }
             Decoder::Leaf(v) => Some(v.clone()),
@@ -41,6 +42,7 @@ impl<T: Clone> Decoder<T> {
     }
 }
 
+#[derive(Debug)]
 pub enum Encoded<T> {
     Empty,
     Huffman(Vec<u8>, u64, Decoder<T>),

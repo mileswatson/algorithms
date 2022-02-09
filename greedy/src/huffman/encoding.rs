@@ -96,14 +96,11 @@ fn create_tree<T: Hash + Eq + Clone>(items: &[T]) -> Option<EncodeTree<T>> {
 
 pub fn encode_with_tree<T: Eq + Hash + Clone>(items: &[T], tree: &EncodeTree<T>) -> Vec<u8> {
     let codebook = tree.codebook();
-    items
-        .iter()
-        .map(|item| codebook.get(item))
-        .fold(BitVec::new(), |mut x, y| {
-            x.extend(y.unwrap());
-            x
-        })
-        .to_bytes()
+    let mut encoded = BitVec::new();
+    for item in items {
+        encoded.extend(codebook.get(item).unwrap());
+    }
+    encoded.to_bytes()
 }
 
 pub fn encode<T: Hash + Eq + Clone>(items: &[T]) -> Encoded<T> {
