@@ -1,3 +1,5 @@
+use std::mem::{replace, take};
+
 use super::SearchTree;
 
 struct BinaryTreeIter<'a, T>(Vec<&'a BinaryTree<T>>);
@@ -37,6 +39,12 @@ enum BinaryTree<T> {
     Empty,
 }
 
+impl<T> Default for BinaryTree<T> {
+    fn default() -> BinaryTree<T> {
+        BinaryTree::Empty
+    }
+}
+
 impl<T: Ord> BinaryTree<T> {
     fn new(value: T) -> BinaryTree<T> {
         BinaryTree::Value(
@@ -44,6 +52,26 @@ impl<T: Ord> BinaryTree<T> {
             Box::new(BinaryTree::Empty),
             Box::new(BinaryTree::Empty),
         )
+    }
+
+    fn value(self) -> Option<T> {
+        match self {
+            BinaryTree::Value(val, ..) => Some(val),
+            BinaryTree::Empty => None,
+        }
+    }
+
+    fn delete_min(&mut self) -> Option<T> {
+        match self {
+            BinaryTree::Empty => None,
+            BinaryTree::Value(_, left, right) => match left.as_mut() {
+                BinaryTree::Empty => {
+                    let right = take(right);
+                    replace(self, *right).value()
+                }
+                BinaryTree::Value(..) => left.delete_min(),
+            },
+        }
     }
 }
 
@@ -70,6 +98,30 @@ impl<T: Ord> SearchTree<T> for BinaryTree<T> {
     fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = &'a T> + 'a> {
         let x = BinaryTreeIter::<'a, _>::new(self);
         Box::new(x)
+    }
+
+    fn delete(&mut self, key: &T) -> Option<T> {
+        match self {
+            BinaryTree::Empty => None,
+            BinaryTree::Value(value, left, right) => {
+                if key == value {
+                    match (left.as_mut(), right.as_mut()) {
+                        (BinaryTree::Empty, BinaryTree::Empty) => take(self).value(),
+                        (child, BinaryTree::Empty) | (BinaryTree::Empty, child) => {
+                            let child = take(child);
+                            replace(self, child).value()
+                        }
+                        (BinaryTree::Value(..), BinaryTree::Value(..)) => {
+                            Some(replace(value, right.delete_min()?))
+                        }
+                    }
+                } else if key <= value {
+                    left.delete(key)
+                } else {
+                    right.delete(key)
+                }
+            }
+        }
     }
 }
 
