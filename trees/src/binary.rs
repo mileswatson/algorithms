@@ -1,6 +1,10 @@
-use std::mem::{replace, take};
+use std::{
+    cmp::Ordering::*,
+    mem::{replace, take},
+};
 
 use super::SearchTree;
+use BinaryTree::*;
 
 struct BinaryTreeIter<'a, T>(Vec<&'a BinaryTree<T>>);
 
@@ -12,7 +16,7 @@ impl<'a, T> BinaryTreeIter<'a, T> {
     }
 
     fn set_next(&mut self, mut tree: &'a BinaryTree<T>) {
-        while let BinaryTree::Value(_, left, _) = tree {
+        while let Node(_, left, _) = tree {
             self.0.push(tree);
             tree = left;
         }
@@ -24,52 +28,48 @@ impl<'a, T> Iterator for BinaryTreeIter<'a, T> {
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.0.pop()? {
-            BinaryTree::Value(value, _, right) => {
+            Node(value, _, right) => {
                 let v = value;
                 self.set_next(right);
                 Some(v)
             }
-            BinaryTree::Empty => panic!(),
+            Leaf => panic!(),
         }
     }
 }
 
 enum BinaryTree<T> {
-    Value(T, Box<BinaryTree<T>>, Box<BinaryTree<T>>),
-    Empty,
+    Node(T, Box<BinaryTree<T>>, Box<BinaryTree<T>>),
+    Leaf,
 }
 
 impl<T> Default for BinaryTree<T> {
     fn default() -> BinaryTree<T> {
-        BinaryTree::Empty
+        Leaf
     }
 }
 
 impl<T: Ord> BinaryTree<T> {
     fn new(value: T) -> BinaryTree<T> {
-        BinaryTree::Value(
-            value,
-            Box::new(BinaryTree::Empty),
-            Box::new(BinaryTree::Empty),
-        )
+        Node(value, Box::new(Leaf), Box::new(Leaf))
     }
 
     fn value(self) -> Option<T> {
         match self {
-            BinaryTree::Value(val, ..) => Some(val),
-            BinaryTree::Empty => None,
+            Node(val, ..) => Some(val),
+            Leaf => None,
         }
     }
 
     fn delete_min(&mut self) -> Option<T> {
         match self {
-            BinaryTree::Empty => None,
-            BinaryTree::Value(_, left, right) => match left.as_mut() {
-                BinaryTree::Empty => {
+            Leaf => None,
+            Node(_, left, right) => match left.as_mut() {
+                Leaf => {
                     let right = take(right);
                     replace(self, *right).value()
                 }
-                BinaryTree::Value(..) => left.delete_min(),
+                Node(..) => left.delete_min(),
             },
         }
     }
@@ -77,15 +77,15 @@ impl<T: Ord> BinaryTree<T> {
 
 impl<T: Ord> SearchTree<T> for BinaryTree<T> {
     fn new() -> BinaryTree<T> {
-        BinaryTree::Empty
+        Leaf
     }
 
     fn insert(&mut self, other: T) {
         match self {
-            BinaryTree::Empty => {
+            Leaf => {
                 *self = BinaryTree::new(other);
             }
-            BinaryTree::Value(value, left, right) => {
+            Node(value, left, right) => {
                 if &other <= value {
                     left.insert(other);
                 } else {
@@ -102,25 +102,19 @@ impl<T: Ord> SearchTree<T> for BinaryTree<T> {
 
     fn delete(&mut self, key: &T) -> Option<T> {
         match self {
-            BinaryTree::Empty => None,
-            BinaryTree::Value(value, left, right) => {
-                if key == value {
-                    match (left.as_mut(), right.as_mut()) {
-                        (BinaryTree::Empty, BinaryTree::Empty) => take(self).value(),
-                        (child, BinaryTree::Empty) | (BinaryTree::Empty, child) => {
-                            let child = take(child);
-                            replace(self, child).value()
-                        }
-                        (BinaryTree::Value(..), BinaryTree::Value(..)) => {
-                            Some(replace(value, right.delete_min()?))
-                        }
+            Leaf => None,
+            Node(value, left, right) => match key.cmp(value) {
+                Equal => match (left.as_mut(), right.as_mut()) {
+                    (Leaf, Leaf) => take(self).value(),
+                    (child, Leaf) | (Leaf, child) => {
+                        let child = take(child);
+                        replace(self, child).value()
                     }
-                } else if key <= value {
-                    left.delete(key)
-                } else {
-                    right.delete(key)
-                }
-            }
+                    (Node(..), Node(..)) => Some(replace(value, right.delete_min()?)),
+                },
+                Less => left.delete(key),
+                Greater => right.delete(key),
+            },
         }
     }
 }
