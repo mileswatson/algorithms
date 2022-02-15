@@ -43,13 +43,10 @@ impl<T: Ord> BinaryTree<T> {
     }
 
     fn fill_vec(self, v: &mut Vec<T>) {
-        match self {
-            Node(val, left, right) => {
-                left.fill_vec(v);
-                v.push(val);
-                right.fill_vec(v);
-            }
-            Leaf => {}
+        if let Node(val, left, right) = self {
+            left.fill_vec(v);
+            v.push(val);
+            right.fill_vec(v);
         }
     }
 }
