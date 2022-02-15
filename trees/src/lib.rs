@@ -4,7 +4,7 @@ pub trait SearchTree<T: Ord> {
     fn new() -> Self;
     fn insert(&mut self, value: T);
     fn delete(&mut self, value: &T) -> Option<T>;
-    fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = &'a T> + 'a>;
+    fn to_vec(self) -> Vec<T>;
 }
 
 #[cfg(test)]
@@ -28,6 +28,6 @@ mod test {
             t.delete(&v.swap_remove(index));
         }
         v.sort_unstable();
-        assert_eq!(v, t.iter().copied().collect::<Vec<_>>())
+        assert_eq!(v, t.to_vec())
     }
 }

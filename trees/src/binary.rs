@@ -6,38 +6,6 @@ use std::{
 use super::SearchTree;
 use BinaryTree::*;
 
-struct BinaryTreeIter<'a, T>(Vec<&'a BinaryTree<T>>);
-
-impl<'a, T> BinaryTreeIter<'a, T> {
-    pub fn new(root: &'a BinaryTree<T>) -> BinaryTreeIter<T> {
-        let mut iter = BinaryTreeIter(Vec::new());
-        iter.set_next(root);
-        iter
-    }
-
-    fn set_next(&mut self, mut tree: &'a BinaryTree<T>) {
-        while let Node(_, left, _) = tree {
-            self.0.push(tree);
-            tree = left;
-        }
-    }
-}
-
-impl<'a, T> Iterator for BinaryTreeIter<'a, T> {
-    type Item = &'a T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match self.0.pop()? {
-            Node(value, _, right) => {
-                let v = value;
-                self.set_next(right);
-                Some(v)
-            }
-            Leaf => panic!(),
-        }
-    }
-}
-
 enum BinaryTree<T> {
     Node(T, Box<BinaryTree<T>>, Box<BinaryTree<T>>),
     Leaf,
@@ -73,6 +41,17 @@ impl<T: Ord> BinaryTree<T> {
             },
         }
     }
+
+    fn fill_vec(self, v: &mut Vec<T>) {
+        match self {
+            Node(val, left, right) => {
+                left.fill_vec(v);
+                v.push(val);
+                right.fill_vec(v);
+            }
+            Leaf => {}
+        }
+    }
 }
 
 impl<T: Ord> SearchTree<T> for BinaryTree<T> {
@@ -95,11 +74,6 @@ impl<T: Ord> SearchTree<T> for BinaryTree<T> {
         }
     }
 
-    fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = &'a T> + 'a> {
-        let x = BinaryTreeIter::<'a, _>::new(self);
-        Box::new(x)
-    }
-
     fn delete(&mut self, key: &T) -> Option<T> {
         match self {
             Leaf => None,
@@ -116,6 +90,12 @@ impl<T: Ord> SearchTree<T> for BinaryTree<T> {
                 Greater => right.delete(key),
             },
         }
+    }
+
+    fn to_vec(self) -> Vec<T> {
+        let mut v = Vec::new();
+        self.fill_vec(&mut v);
+        v
     }
 }
 
