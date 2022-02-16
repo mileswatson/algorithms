@@ -98,12 +98,12 @@ impl<T: Ord> SearchTree<T> for BinaryTree<T> {
 
 #[cfg(test)]
 mod test {
-    use crate::test::test;
+    use crate::test::insertion_and_deletion;
 
     use super::BinaryTree;
 
     #[test]
     fn binary_tree_test() {
-        test::<BinaryTree<i32>>();
+        insertion_and_deletion::<BinaryTree<i32>>();
     }
 }
