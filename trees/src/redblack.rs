@@ -144,26 +144,24 @@ impl<T: Ord> RBTree<T> {
             Fixup::Fix(zside) => zside,
         };
 
-        while self.get_mut(pside).color() == Red {
-            let u = self.get_mut(!pside);
-            if u.color() == Red {
-                u.set_color(Black);
-                self.get_mut(pside).set_color(Black);
-                self.set_color(Red);
-                debug_assert!(self.invariant_holds());
-                return Fixup::CheckRed;
-            } else {
-                let p = self.get_mut(pside);
-                if zside != pside {
-                    p.rotate(pside);
-                }
-                p.set_color(Black);
-                self.set_color(Red);
-                self.rotate(!pside);
+        let u = self.get_mut(!pside);
+        if u.color() == Red {
+            u.set_color(Black);
+            self.get_mut(pside).set_color(Black);
+            self.set_color(Red);
+            debug_assert!(self.invariant_holds());
+            Fixup::CheckRed
+        } else {
+            let p = self.get_mut(pside);
+            if zside != pside {
+                p.rotate(pside);
             }
+            p.set_color(Black);
+            self.set_color(Red);
+            self.rotate(!pside);
+            debug_assert!(self.invariant_holds());
+            Fixup::Fixed
         }
-        debug_assert!(self.invariant_holds());
-        Fixup::Fixed
     }
 
     fn fill_vec(self, v: &mut Vec<T>) {

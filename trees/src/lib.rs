@@ -19,7 +19,7 @@ mod test {
     }
 
     pub fn insertion<T: SearchTree<i32>>() {
-        let mut v = random_vec(10000);
+        let mut v = random_vec(1000000);
         let mut t = T::new();
         for x in v.iter() {
             t.insert(*x);
